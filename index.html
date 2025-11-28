@@ -2,7 +2,7 @@
 <html lang="az">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta id="viewportMeta" name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ApeChain Marketplace</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   
@@ -11,14 +11,14 @@
        1. OPENSEA LIGHT THEME VARIABLES
        ========================================= */
     :root {
-      --os-bg: #ffffff;            /* Əsas Ağ Fon */
-      --os-card: #ffffff;          /* Kart Rəngi */
-      --os-border: #e5e8eb;        /* İncə Boz Çərçivə */
-      --os-text: #353840;          /* Tünd Boz Yazı */
-      --os-subtext: #707a83;       /* Açıq Boz Yazı */
-      --os-blue: #2081E2;          /* OpenSea Mavisi */
-      --os-blue-hover: #1868b7;    /* Mavi Hover */
-      --os-orange: #ff6a00;        /* Sənin Narıncı Rəngin */
+      --os-bg: #ffffff;
+      --os-card: #ffffff;
+      --os-border: #e5e8eb;
+      --os-text: #353840;
+      --os-subtext: #707a83;
+      --os-blue: #2081E2;
+      --os-blue-hover: #1868b7;
+      --os-orange: #ff6a00;
       --os-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       --os-radius: 12px;
     }
@@ -29,7 +29,7 @@
       background-color: var(--os-bg);
       color: var(--os-text);
       min-height: 100vh;
-      overflow-x: hidden;
+      overflow-x: hidden; /* Scrollbar problemini həll edir */
     }
 
     /* =========================================
@@ -60,7 +60,33 @@
     }
     .logo span { color: var(--os-blue); }
 
-    /* Buttons */
+    /* Buttons Container */
+    .nav-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* View Toggle Button (YENİ) */
+    .view-toggle-btn {
+        background: transparent;
+        border: 1px solid var(--os-border);
+        color: var(--os-text);
+        padding: 8px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .view-toggle-btn:hover {
+        background: #f5f5f5;
+        border-color: #d0d0d0;
+    }
+
     .wallet-btn {
       background-color: var(--os-blue);
       color: white;
@@ -89,14 +115,24 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
     }
 
+    /* Mobil üçün düzəlişlər (Navbar) */
+    @media (max-width: 600px) {
+        .navbar { padding: 0 15px; }
+        .logo span { display: none; } /* Mobildə yer tutmasın deyə yazını gizlədə bilərsən, istəsən sil bu sətri */
+        .logo:before { content: "🦍"; font-size: 28px; } /* Mobildə sadəcə logo */
+        .wallet-btn { padding: 8px 14px; font-size: 13px; }
+        .view-toggle-btn { padding: 8px; }
+        .view-toggle-btn span { display: none; } /* Mobildə yazı gizlənir, sadəcə ikon qalır */
+    }
+
     /* =========================================
        3. MAIN LAYOUT
        ========================================= */
     .container {
-      max-width: 1600px; /* Geniş ekran */
+      max-width: 1600px;
       margin: 0 auto;
       padding: 24px 30px;
-      padding-bottom: 120px; /* Bulk bar üçün yer */
+      padding-bottom: 120px;
     }
 
     .info-bar {
@@ -142,10 +178,9 @@
       border-color: #dcdfe3;
     }
 
-    /* Image Wrapper & Zoom */
     .card-image-wrapper {
       width: 100%;
-      height: 250px; /* Şəkil hündürlüyü */
+      height: 250px;
       overflow: hidden;
       position: relative;
       background: #fbfbfb;
@@ -160,10 +195,9 @@
     }
 
     .nft-card:hover .card-image-wrapper img {
-      transform: scale(1.08); /* Zoom effekti */
+      transform: scale(1.08);
     }
 
-    /* Card Text Content */
     .card-content {
       padding: 16px;
       display: flex;
@@ -192,21 +226,19 @@
     .price-val { font-size: 14px; font-weight: 600; color: var(--os-text); }
 
     /* =========================================
-       6. ACTION BUTTONS (Hover-də çıxanlar)
+       6. ACTION BUTTONS
        ========================================= */
     .card-actions {
       margin-top: 12px;
       display: flex;
       gap: 8px;
-      opacity: 0; /* Gizlidir */
+      opacity: 0;
       transform: translateY(10px);
       transition: all 0.25s ease;
     }
     
-    /* Kartın üstünə gələndə görünür */
     .nft-card:hover .card-actions { opacity: 1; transform: translateY(0); }
     
-    /* Mobil üçün həmişə görünür */
     @media (max-width: 768px) { .card-actions { opacity: 1; transform: translateY(0); } }
 
     .mini-input {
@@ -242,7 +274,7 @@
     .btn-list:hover { border-color: var(--os-blue); color: var(--os-blue-hover); }
 
     /* =========================================
-       7. NARINCI CHECKBOX (SƏNİN İSTƏYİN)
+       7. CHECKBOX
        ========================================= */
     .select-box {
       position: absolute;
@@ -254,24 +286,18 @@
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      
-      /* Default hal: İçi ağ, kənarı narıncı */
       background-color: #ffffff;
       border: 2px solid var(--os-orange);
       border-radius: 6px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      
       display: none; 
       transition: all 0.2s ease;
     }
 
-    /* Checked hal: İçi tam narıncı */
     .select-box:checked {
       background-color: var(--os-orange);
       border-color: var(--os-orange);
       transform: scale(1.1);
-      
-      /* Ağ Tick Icon */
       background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2.5-2.5a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
       background-size: 70%;
       background-position: center;
@@ -281,7 +307,7 @@
     .nft-card:hover .select-box, .select-box:checked { display: block; }
 
     /* =========================================
-       8. SKELETON LOADING (Light Mode)
+       8. SKELETON LOADING
        ========================================= */
     .skeleton {
       background: #f0f2f5;
@@ -300,13 +326,13 @@
     .sk-card { height: 360px; border-radius: var(--os-radius); }
 
     /* =========================================
-       9. BULK BAR (Aşağı Panel)
+       9. BULK BAR
        ========================================= */
     #bulkBar {
       position: fixed;
       bottom: 20px;
       left: 50%;
-      transform: translateX(-50%) translateY(120px); /* Başlanğıcda gizli */
+      transform: translateX(-50%) translateY(120px);
       background: #ffffff;
       border: 1px solid var(--os-border);
       padding: 16px 24px;
@@ -337,7 +363,6 @@
 
     .bulk-info { font-weight: 600; color: var(--os-text); font-size: 15px; }
     
-    /* Cancel Button */
     .cancel-icon {
         background: none; border: none; 
         color: #999; cursor: pointer; 
@@ -353,9 +378,15 @@
     <div class="logo">
       <span>APE MARKET</span>
     </div>
-    <div>
-      <button class="wallet-btn" id="connectBtn">Connect Wallet</button>
-      <button class="wallet-btn disconnect" id="disconnectBtn" style="display:none;">Disconnect</button>
+    
+    <div class="nav-actions">
+        <button class="view-toggle-btn" id="viewToggleBtn" onclick="toggleViewMode()">
+            <span id="viewIcon">💻</span> 
+            <span id="viewText">Masaüstü</span>
+        </button>
+
+        <button class="wallet-btn" id="connectBtn">Connect Wallet</button>
+        <button class="wallet-btn disconnect" id="disconnectBtn" style="display:none;">Disconnect</button>
     </div>
   </nav>
 
@@ -379,7 +410,6 @@
 
   <div id="bulkBar">
     <div class="bulk-info" id="bulkCount">0 NFT seçildi</div>
-    
     <div style="display:flex; gap:10px; align-items:center;">
         <input type="number" id="bulkPrice" placeholder="Qiymət (APE)" class="bulk-input" step="0.001">
         <button class="wallet-btn" id="bulkListBtn" style="padding: 10px 30px;">Listələ</button>
@@ -387,8 +417,52 @@
     </div>
   </div>
 
+  <script>
+    // 1. Meta tag-i tapırıq
+    const viewportMeta = document.getElementById('viewportMeta');
+    const viewBtn = document.getElementById('viewToggleBtn');
+    const viewIcon = document.getElementById('viewIcon');
+    const viewText = document.getElementById('viewText');
+
+    // 2. Yaddaşdan (localStorage) son seçimi oxuyuruq
+    let currentMode = localStorage.getItem('siteViewMode') || 'mobile';
+
+    // 3. Modu tətbiq etmə funksiyası
+    function applyViewMode(mode) {
+        if (mode === 'desktop') {
+            // Masaüstü rejimi: Eni 1280px-ə məcbur edirik
+            viewportMeta.setAttribute('content', 'width=1280, user-scalable=yes');
+            viewIcon.innerText = "📱";
+            viewText.innerText = "Mobil";
+            viewBtn.style.backgroundColor = "#eef"; // Aktiv olduğunu göstərmək üçün rəng
+            viewBtn.style.borderColor = "#ccf";
+        } else {
+            // Mobil rejimi: Standart responsivlik
+            viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0');
+            viewIcon.innerText = "💻";
+            viewText.innerText = "Masaüstü";
+            viewBtn.style.backgroundColor = "transparent";
+            viewBtn.style.borderColor = "var(--os-border)";
+        }
+        // Seçimi yadda saxla
+        localStorage.setItem('siteViewMode', mode);
+        currentMode = mode;
+    }
+
+    // 4. Düymə basılanda işləyən funksiya
+    function toggleViewMode() {
+        if (currentMode === 'mobile') {
+            applyViewMode('desktop');
+        } else {
+            applyViewMode('mobile');
+        }
+    }
+
+    // 5. Sayt açılanda yaddaşdakı modu tətbiq et
+    applyViewMode(currentMode);
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  
   <script type="module" src="/main.js"></script>
 
 </body>
