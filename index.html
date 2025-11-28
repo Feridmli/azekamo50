@@ -1,323 +1,200 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>OpenSea Light (ApeChain)</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <style>
-    /* OPENSEA LIGHT THEME VARIABLES */
-    :root {
-      --os-bg: #ffffff;            /* Əsas arxa plan */
-      --os-card: #ffffff;          /* Kart rəngi */
-      --os-border: #e5e8eb;        /* İncə boz çərçivələr */
-      --os-text: #353840;          /* Əsas qara yazı */
-      --os-subtext: #707a83;       /* Boz ikinci dərəcəli yazı */
-      --os-blue: #2081E2;          /* OpenSea Mavis */
-      --os-blue-hover: #1868b7;
-      --os-hover-overlay: rgba(0, 0, 0, 0.04);
-      --os-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      --os-radius: 12px;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background-color: var(--os-bg);
-      color: var(--os-text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* HEADER */
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 30px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 1px 0px var(--os-border); /* Alt xətt */
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      height: 72px;
-      box-sizing: border-box;
-    }
-
-    .logo {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--os-text);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .logo span { color: var(--os-blue); }
-
-    /* BUTTONS */
-    .wallet-btn {
-      background-color: var(--os-blue);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .wallet-btn:hover { background-color: var(--os-blue-hover); transform: translateY(-1px); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApeChain NFT Marketplace</title>
     
-    .wallet-btn.disconnect { 
-        background-color: white; 
-        color: var(--os-text); 
-        border: 1px solid var(--os-border); 
-        box-shadow: none;
-    }
-    .wallet-btn.disconnect:hover { 
-        border-color: #ccc; 
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-    }
-
-    /* LAYOUT */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 30px;
-    }
-
-    .info-bar {
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      color: var(--os-subtext);
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    /* GRID & CARDS */
-    .marketplace {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 24px;
-    }
-
-    .nft-card {
-      background-color: var(--os-card);
-      border: 1px solid var(--os-border);
-      border-radius: var(--os-radius);
-      overflow: hidden;
-      cursor: pointer;
-      transition: box-shadow 0.3s ease, transform 0.2s ease;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .nft-card:hover {
-      box-shadow: var(--os-shadow);
-      transform: translateY(-4px);
-      border-color: #dcdfe3;
-    }
-
-    /* IMAGE ZOOM EFFECT */
-    .card-image-wrapper {
-      width: 100%;
-      height: 260px;
-      overflow: hidden;
-      position: relative;
-      background: #fbfbfb;
-    }
-
-    .card-image-wrapper img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.4s ease;
-    }
-
-    .nft-card:hover .card-image-wrapper img {
-      transform: scale(1.08); /* Zoom effekti */
-    }
-
-    /* CARD CONTENT */
-    .card-content {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex-grow: 1;
-    }
-
-    .card-title {
-      font-weight: 600;
-      font-size: 15px;
-      color: var(--os-text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .card-details {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      margin-top: auto;
-    }
-
-    .price-label { font-size: 12px; color: var(--os-subtext); margin-bottom: 2px; }
-    .price-val { font-size: 15px; font-weight: 600; color: var(--os-text); display: flex; align-items: center; gap: 4px; }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
-    /* INPUT & ACTION BUTTONS IN CARD */
-    .card-actions {
-      margin-top: 12px;
-      display: flex;
-      gap: 8px;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.3s ease;
-    }
-    .nft-card:hover .card-actions { opacity: 1; transform: translateY(0); }
-    @media (max-width: 768px) { .card-actions { opacity: 1; transform: translateY(0); } }
+    <style>
+        /* Ümumi Sıfırlama */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
 
-    .mini-input {
-      width: 100%;
-      background: white;
-      border: 1px solid var(--os-border);
-      color: var(--os-text);
-      padding: 10px;
-      border-radius: 10px;
-      outline: none;
-      transition: border 0.2s;
-    }
-    .mini-input:focus { border-color: var(--os-blue); }
+        body {
+            background-color: #ffffff; /* Ağ fon (qeyd etdiyiniz kimi) */
+            color: #333;
+        }
 
-    .action-btn {
-      width: 100%;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      color: white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .btn-buy { background: var(--os-blue); }
-    .btn-buy:hover { background: var(--os-blue-hover); }
-    
-    .btn-list { 
-        background: white; 
-        color: var(--os-blue); 
-        border: 1px solid var(--os-border); 
-        box-shadow: none; 
-    }
-    .btn-list:hover { border: 1px solid var(--os-blue); color: var(--os-blue-hover); }
+        /* --- Header (Başlıq) --- */
+        header {
+            display: flex;
+            justify_content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e5e5e5;
+        }
 
-    /* CHECKBOX STYLING */
-    .select-box {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 22px;
-      height: 22px;
-      z-index: 10;
-      cursor: pointer;
-      accent-color: var(--os-blue);
-      display: none;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .nft-card:hover .select-box, .select-box:checked { display: block; }
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+        }
 
-    /* SKELETON LOADING ANIMATION (Light version) */
-    .skeleton {
-      background: #f0f2f5;
-      background-image: linear-gradient(to right, #f0f2f5 0%, #ffffff 20%, #f0f2f5 40%, #f0f2f5 100%);
-      background-repeat: no-repeat;
-      background-size: 800px 100%; 
-      animation: shimmer 1.5s infinite linear; 
-      border: 1px solid var(--os-border);
-    }
-    
-    @keyframes shimmer {
-      0% { background-position: -468px 0; }
-      100% { background-position: 468px 0; } 
-    }
+        #connect-wallet {
+            background-color: #000;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
 
-    .sk-card { height: 380px; border-radius: var(--os-radius); }
+        #connect-wallet:hover {
+            background-color: #333;
+        }
 
-    /* BULK BAR (Aşağıdakı panel) - Light Mode */
-    #bulkBar {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: #ffffff;
-      border: 1px solid var(--os-border);
-      padding: 16px 24px;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15); /* Kölgə daha yumşaq */
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      z-index: 2000;
-      transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-      width: 90%;
-      max-width: 600px;
-      justify-content: space-between;
-    }
-    #bulkBar.active { transform: translateX(-50%) translateY(0); }
-    
-    .bulk-input {
-      background: white; 
-      border: 1px solid var(--os-border); 
-      color: var(--os-text);
-      padding: 10px; border-radius: 8px; width: 120px;
-      outline: none;
-    }
-    .bulk-input:focus { border-color: var(--os-blue); }
+        /* --- İdarəetmə Paneli (Action Bar) --- */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            margin-top: 10px;
+        }
 
-    .bulk-info { font-weight: 600; color: var(--os-text); }
-  </style>
+        .bulk-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* --- ✅ SİZİN İSTƏDİYİNİZ DÜZƏLİŞ: CHECKBOX --- */
+        .bulk-select-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            /* Ağ fonda görünməsi üçün qara kölgə və çərçivə */
+            box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.4); 
+            border: 2px solid #000 !important;
+            accent-color: #000; /* Seçiləndə qara olsun */
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-list {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .btn-buy {
+            background-color: #3498db;
+            color: white;
+        }
+
+        /* --- NFT Grid (Kartlar sahəsi) --- */
+        #nft-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px 40px;
+        }
+
+        /* Nümunə NFT Kart Dizaynı (JavaScript ilə yaradılacaq) */
+        .nft-card {
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: #fff;
+            position: relative;
+        }
+
+        .nft-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .nft-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+
+        .nft-info {
+            padding: 15px;
+        }
+
+        .nft-name {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .nft-price {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Kartın üstündəki seçim qutusu üçün */
+        .card-checkbox {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            box-shadow: 0px 0px 4px 2px rgba(0,0,0,0.5); /* Eyni kölgə burada da var */
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
 
-  <nav class="navbar">
-    <div class="logo">
-      <span>APE MARKET</span>
-    </div>
-    <div>
-      <button class="wallet-btn" id="connectBtn">Connect Wallet</button>
-      <button class="wallet-btn disconnect" id="disconnectBtn" style="display:none;">Disconnect</button>
-    </div>
-  </nav>
+    <header>
+        <div class="logo">🦍 ApeChain Market</div>
+        <button id="connect-wallet">Cüzdanı Qoş</button>
+    </header>
 
-  <div class="container">
-    <div class="info-bar">
-      <div id="notice">Marketplace-ə xoş gəldiniz</div>
-      <div id="addr"></div>
-    </div>
+    <section class="action-bar">
+        <div class="bulk-controls">
+            <input type="checkbox" id="select-all-checkbox" class="bulk-select-checkbox">
+            <label for="select-all-checkbox" style="font-weight: 600;">Hamısını Seç</label>
+        </div>
 
-    <div id="marketplace" class="marketplace">
-      <div class="skeleton sk-card"></div>
-      <div class="skeleton sk-card"></div>
-      <div class="skeleton sk-card"></div>
-      <div class="skeleton sk-card"></div>
-    </div>
-  </div>
+        <div class="action-buttons">
+            <button id="list-btn" class="btn btn-list">Listələ (Satışa Qoy)</button>
+            <button id="buy-btn" class="btn btn-buy">Satın Al</button>
+        </div>
+    </section>
 
-  <div id="bulkBar">
-    <div class="bulk-info" id="bulkCount">0 NFT seçildi</div>
-    <div style="display:flex; gap:10px; align-items:center;">
-        <input type="number" id="bulkPrice" placeholder="Qiymət (APE)" class="bulk-input" step="0.001">
-        <button class="wallet-btn" id="bulkListBtn">Listələ</button>
-        <button style="background:none; border:none; color:#888; cursor:pointer; font-size:20px;" onclick="cancelBulk()">✕</button>
-    </div>
-  </div>
+    <main id="nft-container">
+        </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script type="module" src="/main.js"></script>
+    <footer>
+        &copy; 2025 ApeChain Marketplace. Seaport Protocol Powered.
+    </footer>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    
+    <script src="main.js"></script>
+
 </body>
 </html>
