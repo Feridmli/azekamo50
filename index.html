@@ -21,6 +21,9 @@
     .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap: wrap; }
     .wallet-btn { background:linear-gradient(135deg,#ff6a00,#ee0979); color:#fff; padding:10px 18px; border:none; border-radius:50px; cursor:pointer; font-weight:700; transition:all .15s ease; }
     .wallet-btn:active { transform:scale(.98); }
+    /* Update button üçün xüsusi stil (Mavi rəng) */
+    .update-btn { background:linear-gradient(135deg,#00c6ff,#0072ff) !important; }
+    
     #notice { margin-top:10px; opacity:0.8; color: #ffd27a; min-height: 20px;}
     #addr { margin-top:8px; opacity:0.8; font-family: monospace; }
     .marketplace { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px; margin-top:22px; }
@@ -28,8 +31,8 @@
     .nft-card img { width:100%; height:200px; object-fit:cover; border-radius:8px; }
     .nft-card h4 { margin:12px 0 6px 0; color:#ffd27a; font-size:16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .nft-card p { margin:0; color:#fff; opacity:0.85; font-size:14px; margin-bottom: 10px; }
-    .nft-actions { display:flex; justify-content:space-between; align-items:center; margin-top:auto; gap:8px; }
-    .price-input { width:70px; padding:8px; border-radius:6px; border:none; text-align:center; background: #222; color: #fff; }
+    .nft-actions { display:flex; justify-content:space-between; align-items:center; margin-top:auto; gap:8px; flex-wrap:wrap; }
+    .price-input { width:70px; padding:8px; border-radius:6px; border:none; text-align:center; background: #222; color: #fff; flex-grow: 1; }
     .price { font-weight:700; color:#a3ffba; font-size: 15px; }
   </style>
 
