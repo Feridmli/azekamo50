@@ -208,14 +208,13 @@ async function loadNFTs() {
     }
 
     for (const nft of allNFTs) {
-      // API-dən gələn ID-nin yoxlanması
       const tokenidRaw = (nft.tokenid !== undefined && nft.tokenid !== null) ? nft.tokenid : nft.tokenId;
       
       if (tokenidRaw === undefined || tokenidRaw === null) {
           console.warn("NFT TokenID tapılmadı, atlanılır:", nft);
           continue;
       }
-      const tokenid = tokenidRaw.toString(); // Həmişə String!
+      const tokenid = tokenidRaw.toString(); 
 
       const name = nft.name || `NFT #${tokenid}`;
       const image = resolveIPFS(nft.image);
@@ -301,7 +300,8 @@ async function loadNFTs() {
               if (canManage) {
                  const btn = card.querySelector(".update-btn");
                  if(btn) btn.onclick = async () => {
-                     const inp = priceInput.value;
+                     let inp = priceInput.value;
+                     if(inp) inp = inp.trim();
                      if(!inp || isNaN(inp) || parseFloat(inp) <= 0) return notify("Düzgün qiymət yazın!");
                      await listNFT(tokenid, inp);
                  };
@@ -312,7 +312,8 @@ async function loadNFTs() {
           } else if (canManage) {
               const btn = card.querySelector(".list-btn");
               if(btn) btn.onclick = async () => {
-                 const inp = priceInput.value;
+                 let inp = priceInput.value;
+                 if(inp) inp = inp.trim();
                  if(!inp || isNaN(inp) || parseFloat(inp) <= 0) return notify("Düzgün qiymət yazın!");
                  await listNFT(tokenid, inp);
               };
@@ -348,7 +349,9 @@ window.cancelBulk = () => {
 
 if(bulkListBtn) {
     bulkListBtn.onclick = async () => {
-        const priceVal = bulkPriceInp.value;
+        let priceVal = bulkPriceInp.value;
+        if(priceVal) priceVal = priceVal.trim();
+
         if (!priceVal || isNaN(priceVal) || parseFloat(priceVal) <= 0) return alert("Toplu satış üçün düzgün qiymət yazın.");
         
         const tokensArray = Array.from(selectedTokens);
@@ -361,11 +364,11 @@ if(bulkListBtn) {
 // ==========================================
 
 async function listNFT(tokenid, priceInEth) {
-  // İlk qoruma: Əgər tokenid undefined-dirsə, burada dayansın
   if (tokenid === undefined || tokenid === null) {
       alert("XƏTA: Token ID təyin edilməyib (undefined). Səhifəni yeniləyin.");
       return;
   }
+  // Tək NFT olsa belə array kimi göndəririk
   await bulkListNFTs([tokenid], priceInEth);
 }
 
@@ -374,20 +377,23 @@ async function bulkListNFTs(tokenIds, priceInEth) {
 
     if (!signer || !seaport) return alert("Cüzdan qoşulmayıb!");
     
-    // 1. DATA VALIDATION (Xətaları tutmaq üçün)
-    if (priceInEth === undefined || priceInEth === null || priceInEth === "") {
-        return alert("Sistem Xətası: Qiymət dəyəri boşdur (undefined).");
+    // 1. DATA VALIDATION
+    if (priceInEth === undefined || priceInEth === null || String(priceInEth).trim() === "") {
+        return alert("Sistem Xətası: Qiymət dəyəri boşdur.");
     }
 
     let priceWeiString;
     try {
         const safePrice = String(priceInEth).trim();
-        const priceBig = ethers.utils.parseEther(safePrice); // Əgər bura undefined gəlsə, catch-ə düşəcək
+        const priceBig = ethers.utils.parseEther(safePrice); 
         priceWeiString = priceBig.toString();
+        console.log("Price Wei:", priceWeiString);
     } catch (e) {
         console.error("Price Conversion Error:", e);
         return alert(`Qiymət çevrilmə xətası: ${e.message}`);
     }
+
+    if (!priceWeiString) return alert("Qiymət Wei formatına çevrilə bilmədi.");
 
     // Token ID-ləri təmizləyirik (hamısı string olmalıdır)
     const cleanTokenIds = tokenIds.map(t => {
@@ -418,24 +424,25 @@ async function bulkListNFTs(tokenIds, priceInEth) {
             return {
                 conduitKey: ZERO_BYTES32,
                 offer: [{ 
-                    itemType: 2, 
+                    itemType: 2, // ERC721
                     token: NFT_CONTRACT_ADDRESS, 
                     identifier: tokenStr 
                 }],
                 consideration: [{ 
-                    itemType: 0, 
+                    itemType: 0, // NATIVE (APE)
                     token: ZERO_ADDRESS, 
                     identifier: "0", 
-                    startAmount: priceWeiString, // Hesabladığımız String Wei
+                    startAmount: priceWeiString, 
                     endAmount: priceWeiString,
                     recipient: seller 
                 }],
-                startTime: (Math.floor(Date.now()/1000)).toString(),
+                // ƏN VACİB HİSSƏ: Zamanı String-ə çeviririk
+                startTime: Math.floor(Date.now()/1000).toString(),
                 endTime: (Math.floor(Date.now()/1000) + 2592000).toString(),
             };
         });
 
-        console.log("Seaport Input:", orderInputs);
+        console.log("Seaport Input:", JSON.stringify(orderInputs, null, 2));
 
         notify("Zəhmət olmasa cüzdanda imzalayın...");
         
@@ -457,7 +464,7 @@ async function bulkListNFTs(tokenIds, priceInEth) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     tokenid: tokenStr,
-                    price: String(priceInEth), // Bazaya original inputu yazırıq
+                    price: String(priceInEth),
                     seller_address: seller,
                     seaport_order: plainOrder,
                     order_hash: orderHash,
@@ -474,8 +481,8 @@ async function bulkListNFTs(tokenIds, priceInEth) {
         console.error("Bulk List Error Full:", err);
         
         if (err.code === "INVALID_ARGUMENT") {
-             // Əgər Ethers xətasıdırsa, hansı dəyərin xarab olduğunu göstər
-             alert(`Daxili Xəta (Ethers): '${err.argument}' dəyəri '${err.value}' olaraq gəldi.`);
+             console.error("Invalid Argument Details:", err.argument, err.value);
+             alert(`Daxili Xəta (Ethers): '${err.argument}' arqumenti səhvdir. (Dəyər: ${err.value})`);
         } else {
              alert("Satış xətası: " + (err.message || err));
         }
