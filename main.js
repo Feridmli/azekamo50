@@ -10,7 +10,6 @@ import { Seaport } from "@opensea/seaport-js";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://azekamo60.onrender.com";
 const NFT_CONTRACT_ADDRESS = import.meta.env.VITE_NFT_CONTRACT || "0x54a88333F6e7540eA982261301309048aC431eD5";
-// Seaport v1.6 Canonical Address (ApeChain və əksər şəbəkələr üçün eynidir)
 const SEAPORT_CONTRACT_ADDRESS = "0x0000000000000068F116a894984e2DB1123eB395";
 
 const APECHAIN_ID = 33139;
@@ -58,50 +57,58 @@ function resolveIPFS(url) {
 }
 
 // ---------------------------------------------
-// SEAPORT v1.6 ORDER TƏMİZLƏMƏ (FIXED)
+// SEAPORT v1.6 ORDER TƏMİZLƏMƏ (FIXED - SIGNATURE)
 // ---------------------------------------------
 function cleanOrder(orderData) {
   try {
-    // Bəzən DB-dən gələn data birbaşa order obyekti olur, bəzən iç-içə
     const order = orderData.order || orderData;
     const { parameters, signature } = order;
-    
+
     if (!parameters) {
         console.error("Order parameters not found:", orderData);
         return null;
     }
 
-    // Helper: undefined dəyərləri "0" və ya boş stringlə əvəz edir
-    const safeStr = (val) => (val !== undefined && val !== null) ? val.toString() : "0";
+    // Dəyərləri String (uint256) formatına salan köməkçi
+    const toStr = (val) => {
+        if (val === undefined || val === null) return "0";
+        return val.toString();
+    };
 
     return {
       parameters: {
         offerer: parameters.offerer,
         zone: parameters.zone,
+        // Offer item-ləri təmizlə
         offer: parameters.offer.map(item => ({
-          itemType: Number(item.itemType || 0),
+          itemType: Number(item.itemType), // Mütləq Number
           token: item.token,
-          identifierOrCriteria: safeStr(item.identifierOrCriteria || item.identifier), 
-          startAmount: safeStr(item.startAmount),
-          endAmount: safeStr(item.endAmount)
+          identifierOrCriteria: toStr(item.identifierOrCriteria || item.identifier),
+          startAmount: toStr(item.startAmount),
+          endAmount: toStr(item.endAmount)
         })),
+        // Consideration item-ləri təmizlə
         consideration: parameters.consideration.map(item => ({
-          itemType: Number(item.itemType || 0),
+          itemType: Number(item.itemType), // Mütləq Number
           token: item.token,
-          identifierOrCriteria: safeStr(item.identifierOrCriteria || item.identifier),
-          startAmount: safeStr(item.startAmount),
-          endAmount: safeStr(item.endAmount),
+          identifierOrCriteria: toStr(item.identifierOrCriteria || item.identifier),
+          startAmount: toStr(item.startAmount),
+          endAmount: toStr(item.endAmount),
           recipient: item.recipient
         })),
-        orderType: Number(parameters.orderType || 0),
-        startTime: safeStr(parameters.startTime),
-        endTime: safeStr(parameters.endTime),
+        orderType: Number(parameters.orderType), // 0,1,2...
+        startTime: toStr(parameters.startTime),
+        endTime: toStr(parameters.endTime),
         zoneHash: parameters.zoneHash,
-        salt: safeStr(parameters.salt),
+        salt: toStr(parameters.salt),
         conduitKey: parameters.conduitKey,
-        // SEAPORT v1.6 ÜÇÜN ÇOX VACİBDİR: COUNTER
-        counter: safeStr(parameters.counter),
-        totalOriginalConsiderationItems: Number(parameters.totalOriginalConsiderationItems || parameters.consideration.length)
+        counter: toStr(parameters.counter),
+        // Bu sahə imza üçün kritikdir:
+        totalOriginalConsiderationItems: Number(
+            parameters.totalOriginalConsiderationItems !== undefined 
+            ? parameters.totalOriginalConsiderationItems 
+            : parameters.consideration.length
+        )
       },
       signature: signature
     };
@@ -111,7 +118,7 @@ function cleanOrder(orderData) {
   }
 }
 
-// Orderi JSON-a çevirərkən BigNumber xətalarının qarşısını alır
+// BigNumber xətalarının qarşısını alır
 function orderToJsonSafe(obj) {
   return JSON.parse(JSON.stringify(obj, (k, v) => {
     if (v && typeof v === "object") {
@@ -152,7 +159,6 @@ async function connectWallet() {
     signer = provider.getSigner();
     userAddress = (await signer.getAddress()).toLowerCase();
     
-    // Seaport v1.6 Initializer
     seaport = new Seaport(signer, { 
         overrides: { contractAddress: SEAPORT_CONTRACT_ADDRESS } 
     });
@@ -204,7 +210,6 @@ async function loadNFTs() {
       return;
     }
 
-    // Read-only contract for owner check
     let nftContractRead = null;
     if (provider) {
        nftContractRead = new ethers.Contract(NFT_CONTRACT_ADDRESS, ["function ownerOf(uint256) view returns (address)"], provider);
@@ -230,7 +235,6 @@ async function loadNFTs() {
           try { realOwner = await nftContractRead.ownerOf(tokenid); } catch(e) {}
       }
 
-      // Check ownership
       const isMine = (userAddress && realOwner && userAddress.toLowerCase() === realOwner.toLowerCase());
       const isSeller = (userAddress && nft.seller_address && userAddress.toLowerCase() === nft.seller_address.toLowerCase());
       const canManage = isMine || isSeller;
@@ -360,52 +364,55 @@ async function bulkListNFTs(tokenIds, priceWei) {
     
     const seller = await signer.getAddress();
 
+    // 1. APPROVAL (ICAZƏ) YOXLANIR
     try {
         const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, 
             ["function isApprovedForAll(address,address) view returns(bool)", "function setApprovalForAll(address,bool)"], signer);
         
         const isApproved = await nftContract.isApprovedForAll(seller, SEAPORT_CONTRACT_ADDRESS);
         if (!isApproved) {
-            notify("Toplu satış üçün kontrakt təsdiqi verilir...");
+            notify("Satış üçün kontrakt təsdiqi tələb olunur...");
             const tx = await nftContract.setApprovalForAll(SEAPORT_CONTRACT_ADDRESS, true);
             await tx.wait();
+            notify("Təsdiqləndi!");
         }
     } catch (e) { return alert("Approve xətası: " + e.message); }
 
-    notify(`${tokenIds.length} NFT hazırlanır...`);
+    notify(`${tokenIds.length} NFT orderi hazırlanır...`);
 
     try {
         const orderInputs = tokenIds.map(tokenStr => {
             return {
                 offer: [{ 
-                    itemType: 2, 
+                    itemType: 2,  // ERC721
                     token: NFT_CONTRACT_ADDRESS, 
                     identifier: tokenStr 
                 }],
                 consideration: [{ 
-                    itemType: 0, 
+                    itemType: 0, // NATIVE APE
                     token: ZERO_ADDRESS, 
                     identifier: "0", 
                     amount: priceWei.toString(), 
                     recipient: seller 
                 }],
                 startTime: (Math.floor(Date.now()/1000)).toString(),
-                endTime: (Math.floor(Date.now()/1000) + 2592000).toString(), 
+                endTime: (Math.floor(Date.now()/1000) + 2592000).toString(), // 30 gün
             };
         });
 
-        notify("Zəhmət olmasa cüzdanda 1 dəfə imzalayın...");
+        notify("Zəhmət olmasa cüzdanda imzalayın...");
         
         const { executeAllActions } = await seaport.createBulkOrders(orderInputs, seller);
         const signedOrders = await executeAllActions(); 
 
-        notify("İmza alındı! Yadda saxlanılır...");
+        notify("İmza alındı! Bazaya yazılır...");
 
         let successCount = 0;
         for (const order of signedOrders) {
             const offerItem = order.parameters.offer[0];
             const tokenStr = offerItem.identifierOrCriteria;
 
+            // BigNumber-ları stringə çevirib bazaya göndəririk
             const plainOrder = orderToJsonSafe(order);
             const orderHash = seaport.getOrderHash(order.parameters);
 
@@ -429,7 +436,7 @@ async function bulkListNFTs(tokenIds, priceWei) {
 
     } catch (err) {
         console.error("Bulk List Error:", err);
-        alert("Toplu satış xətası: " + (err.message || err));
+        alert("Satış xətası: " + (err.message || err));
     }
 }
 
@@ -438,7 +445,7 @@ async function listNFT(tokenid, priceWei) {
 }
 
 // ==========================================
-// BUY FUNCTION - (CRITICAL FIX FOR Undefined Value)
+// BUY FUNCTION (FIXED: APPROVAL CHECK REMOVED)
 // ==========================================
 
 async function buyNFT(nftRecord) {
@@ -446,47 +453,48 @@ async function buyNFT(nftRecord) {
     
     try {
         const buyerAddress = await signer.getAddress();
+        
+        // Öz NFT-sini almasın
         const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, ["function ownerOf(uint256) view returns (address)"], provider);
         try {
             const owner = await nftContract.ownerOf(nftRecord.tokenid);
             if (owner.toLowerCase() === buyerAddress.toLowerCase()) return alert("Bu NFT artıq sizindir!");
         } catch(e) {}
 
-        notify("Order emal edilir...");
+        notify("Order yoxlanılır...");
         let rawJson = nftRecord.seaport_order;
-        if (!rawJson) return alert("Order yoxdur.");
+        if (!rawJson) return alert("Order tapılmadı.");
         
-        // Supabase-dən string gəlirsə parse et
         if (typeof rawJson === "string") { 
             try { rawJson = JSON.parse(rawJson); } catch (e) { return alert("JSON Parse Xətası"); } 
         }
 
-        // Təmizləmə
+        // Məlumatı təmizlə və strukturlaşdır
         const cleanOrd = cleanOrder(rawJson);
-        if (!cleanOrd) return alert("Order stukturu xətalıdır");
+        if (!cleanOrd) return alert("Order strukturu xətalıdır");
 
-        const seller = cleanOrd.parameters.offerer;
-        const appContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, ["function isApprovedForAll(address,address) view returns(bool)"], provider);
-        const approved = await appContract.isApprovedForAll(seller, SEAPORT_CONTRACT_ADDRESS);
-        if (!approved) return alert("Satıcı icazəni ləğv edib.");
+        // DİQQƏT: Buradakı 'isApprovedForAll' yoxlamasını sildik.
+        // Səbəb: Satıcı yalnız tək NFT-yə icazə vermiş ola bilər.
+        // Bu yoxlamanı Seaport 'fulfillOrder' zamanı özü edəcək.
 
-        notify("Hazırlanır...");
+        notify("Tranzaksiya hazırlanır...");
         
-        // Seaport fulfill
-        const { actions } = await seaport.fulfillOrder({ order: cleanOrd, accountAddress: buyerAddress });
+        // Seaport fulfill (İcazə yoxdursa burada xəta verəcək)
+        const { actions } = await seaport.fulfillOrder({ 
+            order: cleanOrd, 
+            accountAddress: buyerAddress 
+        });
+
         const txRequest = await actions[0].transactionMethods.buildTransaction();
 
-        // ----------------------------------------------
-        // FIXED: BigNumber Value Hesablaması
-        // ----------------------------------------------
+        // Transaction dəyərini (Value) düzgün hesabla
         let finalValue = ethers.BigNumber.from(0);
 
-        // 1. Transaction dəyəri gəlibsə, onu string kimi qəbul et
-        if (txRequest.value !== undefined && txRequest.value !== null) {
+        if (txRequest.value) {
             finalValue = ethers.BigNumber.from(txRequest.value.toString());
         }
 
-        // 2. Əgər dəyər hələ də 0-dırsa, consideration (ödəniş) hissəsini yoxla
+        // Əgər value hələ də 0-dırsa, qiyməti consideration-dan tap
         if (finalValue.eq(0) && cleanOrd.parameters.consideration) {
             cleanOrd.parameters.consideration.forEach(c => {
                 // ItemType 0 = Native Token (APE)
@@ -497,9 +505,9 @@ async function buyNFT(nftRecord) {
             });
         }
 
+        // Gas limit hesabla
         let gasLimit = ethers.BigNumber.from("500000");
         try {
-            // estimateGas çağırarkən value-ni mütləq ötür
             const est = await signer.estimateGas({ 
                 to: txRequest.to,
                 data: txRequest.data,
@@ -508,10 +516,11 @@ async function buyNFT(nftRecord) {
             });
             gasLimit = est.mul(120).div(100); 
         } catch(e) {
-            console.warn("Gas estimation failed, using default", e);
+            console.warn("Gas estimate failed (likely approval missing or balance low):", e);
+            // Xüsusi xəta mesajı qaytara bilərik, amma davam edək
         }
 
-        notify("Təsdiqləyin...");
+        notify("Metamask-da təsdiqləyin...");
         const tx = await signer.sendTransaction({
             to: txRequest.to,
             data: txRequest.data,
@@ -519,20 +528,31 @@ async function buyNFT(nftRecord) {
             gasLimit
         });
 
-        notify("Gözləyin...");
+        notify("Blokçeyndə təsdiqlənir...");
         await tx.wait();
-        notify("Uğurlu!");
+        notify("Uğurlu alış!");
 
+        // Bazada satışı qeyd et
         await fetch(`${BACKEND_URL}/api/buy`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tokenid: nftRecord.tokenid, order_hash: nftRecord.order_hash, buyer_address: buyerAddress }),
+            body: JSON.stringify({ 
+                tokenid: nftRecord.tokenid, 
+                order_hash: nftRecord.order_hash, 
+                buyer_address: buyerAddress 
+            }),
         });
         setTimeout(() => location.reload(), 2000);
 
     } catch (err) {
         console.error(err);
-        alert("Buy xətası: " + (err.message || err));
+        // Xəta mesajlarını daha aydın göstər
+        let msg = err.message || err;
+        if (msg.includes("insufficient funds")) msg = "Balansınız kifayət etmir.";
+        else if (msg.includes("user rejected")) msg = "Ləğv edildi.";
+        else if (msg.includes("unauthorized")) msg = "Satıcı icazəni ləğv edib (Approval missing).";
+        
+        alert("Buy Xətası: " + msg);
     }
 }
 
